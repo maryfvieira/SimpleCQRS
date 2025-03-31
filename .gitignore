@@ -1,0 +1,126 @@
+## Diretórios gerais a ignorar
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+[Tt]emp/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.lock.json
+
+## Arquivos de build
+*.swp
+*~
+*.orig
+*.patch
+*.diff
+*.bak
+*.log
+*.vsix
+
+## Dependências
+[Nn]uget/
+packages/
+**/[Pp]ackages/*
+!**/[Pp]ackages/repositories.config
+*.nupkg
+
+## Projetos .NET
+*.csproj.user
+*.csproj.*.user
+*.csproj.*.cache
+*.generated.cs
+
+## Docker
+[Dd]ocker-compose.*.yml
+docker-compose.override.yml
+.env
+.dockerignore
+
+## Azure
+.azure/
+*.pubxml
+*.publishsettings
+
+## Rider
+*.sln.iml
+*.DotSettings
+*.DotSettings.user
+
+## VS Code
+.history/
+*.code-workspace
+
+## Testes
+**/*.testsettings
+**/*.runsettings
+**/TestResults/
+*.coverage
+*.coveragexml
+
+## Banco de dados local
+*.mdf
+*.ldf
+*.sdf
+
+## Node.js (se usar frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+## macOS
+.DS_Store
+
+## Linux/Unix
+*~
+.fuse_hidden*
+.directory
+.trash-*
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Resharper
+_ReSharper.*/
+*.ReSharper
+*.DotSettings.user
+
+## Rider
+.idea/
+*.sln.iml
+
+## VS Cache
+.vs/
+.vscode/
+*.VC.db
+*.VC.VC.opendb
+
+## Arquivos temporários
+*.tmp
+*.temp
+
+## Arquivos de publicação
+publish/
+bin/Release/
+obj/Release/
+
+## Arquivos de análise de código
+*.sarif
+
+## Localização
+*.i18n.json
+
+## Arquivos de configuração local (não versionados)
+appsettings.Local.json
+appsettings.Development.json
+secrets.json
