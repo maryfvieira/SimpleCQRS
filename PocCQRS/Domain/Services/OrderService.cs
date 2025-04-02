@@ -1,6 +1,7 @@
 using MassTransit;
 using PocCQRS.Application.Commands;
 using PocCQRS.Application.Events;
+using PocCQRS.Infrastructure.Messaging;
 using PocCQRS.Infrastructure.Persistence.Repository;
 
 namespace PocCQRS.Domain.Services;
@@ -8,18 +9,18 @@ namespace PocCQRS.Domain.Services;
 public class OrderService: IOrderService
 {
     private readonly IOrderRepository _repository;
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly Publisher<OrderCreatedEvent> _publisher;
 
-    public OrderService(IOrderRepository repository, IPublishEndpoint publishEndpoint)
+    public OrderService(IOrderRepository repository, IPublisherFactory publisherFactory)
     {
         _repository = repository;
-        _publishEndpoint = publishEndpoint;
+        _publisher = publisherFactory.CreatePublisher<OrderCreatedEvent>();
     }
 
-    public async Task<Guid> CreateOrderAsync(CreateOrder.Command command)
+    public async Task<Guid> CreateOrderAsync(CreateOrderCommand command)
     {
         var orderId = await _repository.CreateOrderAsync(command.ProductName, command.Quantity);
-        await _publishEndpoint.Publish(new OrderCreatedEvent(orderId, command.ProductName));
+        await _publisher.PublishAsync(new OrderCreatedEvent(orderId, command.ProductName));
         return orderId;
     }
 

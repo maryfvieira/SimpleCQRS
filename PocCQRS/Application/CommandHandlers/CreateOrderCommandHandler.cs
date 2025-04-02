@@ -2,34 +2,26 @@ using MassTransit;
 using MediatR;
 using PocCQRS.Application.Commands;
 using PocCQRS.Application.Events;
+using PocCQRS.Domain.Services;
+using PocCQRS.Infrastructure.Messaging;
 using PocCQRS.Infrastructure.Persistence.Repository;
 
 namespace PocCQRS.Application.CommandHandlers;
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Guid>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IOrderService _orderService;
 
     public CreateOrderCommandHandler(
-        IOrderRepository orderRepository,
-        IPublishEndpoint publishEndpoint)
+        IOrderService orderService)
     {
-        _orderRepository = orderRepository;
-        _publishEndpoint = publishEndpoint;
+        _orderService = orderService;
     }
 
     public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
         // Persiste no MySQL via Dapper
-        var orderId = await _orderRepository.CreateOrderAsync(request.ProductName, request.Quantity);
-        
-        // Publica evento via MassTransit
-        await _publishEndpoint.Publish(
-            new OrderCreatedEvent(orderId, request.ProductName), 
-            cancellationToken
-        );
-
+        var orderId = await _orderService.CreateOrderAsync(request);
         return orderId;
     }
 }
