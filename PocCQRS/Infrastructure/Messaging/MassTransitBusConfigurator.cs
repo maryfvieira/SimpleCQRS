@@ -8,71 +8,54 @@ public static class MassTransitBusConfigurator
 {
     public static IServiceCollection AddMassTransitBus(this IServiceCollection services, IAppSettings appSettings)
     {
-        services.AddMassTransit(x =>
+        
+        var config = appSettings.RabbitMQSettings.Main;
+        
+        services.AddMassTransit(registrationConfigurator =>
         {
-            var settings = appSettings.RabbitMQSettings.Main;
-        
-            // Register the generic consumer type
-            x.AddConsumer(typeof(GenericConsumer<>));
-        
-            x.UsingRabbitMq((context, cfg) =>
+            foreach (var queue in config.Queues)
             {
-                cfg.Host(settings.Host, settings.VirtualHost, h =>
+                Type consumerType = GetConsumerTypeByQueueName(queue.Value.Name);
+        
+                registrationConfigurator.AddConsumer(consumerType);
+            }
+
+            registrationConfigurator.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(config.Host, config.VirtualHost, hostConfigurator =>
                 {
-                    h.Username(settings.Username);
-                    h.Password(settings.Password);
+                    hostConfigurator.Username(config.Username);
+                    hostConfigurator.Password(config.Password);
                 });
 
-                foreach (var queue in settings.Queues.Values)
+                foreach (var queue in config.Queues)
                 {
-                    cfg.ReceiveEndpoint(queue.Name, e =>
+                    Type consumerType = GetConsumerTypeByQueueName(queue.Value.Name);
+            
+                    cfg.ReceiveEndpoint(queue.Value.Name, e =>
                     {
-                        var eventType = Type.GetType("PocCQRS.Application.Events." + queue.Name);
-                        if (eventType == null)
-                            throw new InvalidOperationException($"Event type not found: {queue.Name}");
-                    
-                        var consumerType = typeof(GenericConsumer<>).MakeGenericType(eventType);
                         e.ConfigureConsumer(context, consumerType);
                     });
                 }
             });
         });
-
+        
         services.AddMassTransitHostedService();
         return services;
     }
-    // public static IServiceCollection AddMassTransitBus(this IServiceCollection services, IAppSettings appSettings)
-    // {
-    //     var serviceProvider = services.BuildServiceProvider();
-    //     var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-    //     var logger = loggerFactory.CreateLogger(nameof(MassTransitBusConfigurator));
-    //     
-    //     services.AddMassTransit(x =>
-    //     {
-    //         var settings = appSettings.RabbitMQSettings.Main;
-    //         x.AddConsumers(typeof(Consumer<>).Assembly, typeof(GenericConsumer<>).Assembly);
-    //         x.UsingRabbitMq((context, cfg) =>
-    //         {
-    //             cfg.Host(settings.Host, settings.VirtualHost, h =>
-    //             {
-    //                 h.Username(settings.Username);
-    //                 h.Password(settings.Password);
-    //             });
-    //
-    //             foreach (var queue in settings.Queues.Values)
-    //             {
-    //                 cfg.ReceiveEndpoint(queue.Name, e =>
-    //                 {
-    //                     logger.LogInformation("Configurando fila: {QueueName}", queue.Name);
-    //                     var eventName = "PocCQRS.Application.Events." + queue.Name;
-    //                     e.ConfigureConsumer(context, typeof(GenericConsumer<>).MakeGenericType(Type.GetType(eventName) ?? throw new InvalidOperationException("Nome da Fila deve ser especificado")));
-    //                 });
-    //             }
-    //         });
-    //     });
-    //
-    //     services.AddMassTransitHostedService();
-    //     
-    //     return services;
-    // }
+    
+    static Type GetConsumerTypeByQueueName(string queueName)
+    {
+        var eventType = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .SelectMany(a => a.GetTypes())
+            .FirstOrDefault(t => t.Name == queueName);
+    
+        if (eventType == null)
+        {
+            throw new InvalidOperationException($"Tipo de evento '{queueName}' não encontrado.");
+        }
+
+        return typeof(Consumer<>).MakeGenericType(eventType);
+    }
 }

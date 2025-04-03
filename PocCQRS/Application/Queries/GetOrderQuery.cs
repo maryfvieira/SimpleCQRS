@@ -7,5 +7,5 @@ public static class GetOrderQuery
 {
     public record Query(Guid OrderId);
     
-    public record Response(Guid Id, string ProductName, int Quantity);
+    public record Response(Guid Id, string ProductName, int Quantity, double Amount);
 }

@@ -1,3 +1,3 @@
 namespace PocCQRS.Domain.Entities;
 
-public record Order(Guid Id, string ProductName, int Quantity);
+public record Order(string ProductName, int Quantity, double Amount);

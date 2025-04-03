@@ -19,7 +19,7 @@ public class OrderService: IOrderService
 
     public async Task<Guid> CreateOrderAsync(CreateOrderCommand command)
     {
-        var orderId = await _repository.CreateOrderAsync(command.ProductName, command.Quantity);
+        var orderId = await _repository.CreateOrderAsync(command.ProductName, command.Quantity, command.Amount);
         await _publisher.PublishAsync(new OrderCreatedEvent(orderId, command.ProductName));
         return orderId;
     }
