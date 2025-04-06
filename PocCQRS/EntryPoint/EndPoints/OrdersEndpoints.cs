@@ -1,7 +1,6 @@
 using MassTransit;
 using MediatR;
 using PocCQRS.Application.Commands;
-using PocCQRS.Application.Events;
 using PocCQRS.Domain.Services;
 
 namespace PocCQRS.EntryPoint.EndPoints;

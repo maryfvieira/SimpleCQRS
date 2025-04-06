@@ -8,7 +8,8 @@ public sealed class AppSettings : IAppSettings, IDisposable
 
     public RabbitMQ RabbitMQSettings { get; private set; }
     public MySqlDB DatabaseSettings { get; private set; }
-    public Reddis CacheSettings { get; private set; }
+    public Redis CacheSettings { get; private set; }
+    public MongoDB MongoSettings { get; private set; }
 
     public AppSettings(
         IConfiguration configuration,
@@ -22,12 +23,12 @@ public sealed class AppSettings : IAppSettings, IDisposable
 
     private void LoadAllSettings()
     {
-        
         try
         {
             RabbitMQSettings = _configuration.GetSection(RabbitMQ.SectionName).Get<RabbitMQ>();
             DatabaseSettings = _configuration.GetSection(MySqlDB.SectionName).Get<MySqlDB>();
-            CacheSettings = _configuration.GetSection(Reddis.SectionName).Get<Reddis>();
+            MongoSettings = _configuration.GetSection(MongoDB.SectionName).Get<MongoDB>();
+            CacheSettings = _configuration.GetSection(Redis.SectionName).Get<Redis>();
             
             _logger.LogInformation("Todas as configurações foram carregadas");
         }

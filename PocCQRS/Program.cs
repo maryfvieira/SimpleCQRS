@@ -9,23 +9,36 @@ using PocCQRS.Infrastructure.Persistence;
 using PocCQRS.Infrastructure.Persistence.Repository;
 using PocCQRS.Infrastructure.Settings;
 using Microsoft.OpenApi.Models;
-using PocCQRS.Application.Events;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using PocCQRS.Infrastructure.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Configurações
 builder.Services.Configure<PocCQRS.Infrastructure.Settings.RabbitMQ>(builder.Configuration.GetSection(PocCQRS.Infrastructure.Settings.RabbitMQ.SectionName));
 builder.Services.Configure<MySqlDB>(builder.Configuration.GetSection(MySqlDB.SectionName));
-builder.Services.Configure<Reddis>(builder.Configuration.GetSection(Reddis.SectionName));
+builder.Services.Configure<Redis>(builder.Configuration.GetSection(Redis.SectionName));
+builder.Services.Configure<PocCQRS.Infrastructure.Settings.MongoDB>(builder.Configuration.GetSection(PocCQRS.Infrastructure.Settings.MongoDB.SectionName));
 builder.Services.AddSingleton<IAppSettings, AppSettings>();
 
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+//databases
 builder.Services.AddPersistence();
 
-// MassTransit Configuration
 var serviceProvider = builder.Services.BuildServiceProvider();
+builder.Services.AddMongoPersistence(serviceProvider.GetRequiredService<IAppSettings>());
+
+
+// Register infrastructure services
+builder.Services.AddScoped<IEventStore, MongoEventStore>();
+builder.Services.AddScoped<IEventStoreRepository, EventStoreRepository>();
+
+// MassTransit Configuration
 builder.Services.AddMassTransitBus(serviceProvider.GetRequiredService<IAppSettings>());
 
 builder.Services.AddSingleton<IPublisherFactory>(provider => 
@@ -44,6 +57,11 @@ builder.Services.AddSingleton<IPublisherFactory>(provider =>
         throw;
     }
 });
+
+BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+
+// Opcional: Configuração global para evitar problemas com DateTime
+BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();

@@ -4,7 +4,7 @@ using PocCQRS.Infrastructure.Settings;
 
 namespace PocCQRS.Infrastructure.Persistence;
 
-public static class DbExtension
+public static class MySqlDbExtension
 {
 
     public static IServiceCollection AddPersistence(this IServiceCollection services)
@@ -25,7 +25,7 @@ public static class DbExtension
             await connection.ExecuteAsync(@"
                 CREATE TABLE IF NOT EXISTS Orders (
                     Id CHAR(36) PRIMARY KEY,
-                    ProductName VARCHAR(100) NOT NULL,
+                    ProductId VARCHAR(100) NOT NULL,
                     Quantity INT NOT NULL,
                     CreatedAt DATETIME NOT NULL
                 )");

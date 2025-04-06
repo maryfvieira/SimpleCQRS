@@ -1,8 +1,7 @@
 using MassTransit;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using PocCQRS.Infrastructure.Messaging;
 using PocCQRS.Infrastructure.Settings;
+
+namespace PocCQRS.Infrastructure.Messaging;
 
 public static class MassTransitBusConfigurator
 {

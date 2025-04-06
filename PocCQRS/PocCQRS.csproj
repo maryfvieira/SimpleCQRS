@@ -10,6 +10,7 @@
         <!-- ASP.NET Core e Swagger -->
         <PackageReference Include="GreenPipes" Version="4.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
+        <PackageReference Include="MongoDB.Driver" Version="3.3.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Polly" Version="8.5.2" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
@@ -30,6 +31,10 @@
         <!-- Configuração e Utilitários -->
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Infrastructure\Messaging\GenericConsumer.cs" />
     </ItemGroup>
 
 </Project>

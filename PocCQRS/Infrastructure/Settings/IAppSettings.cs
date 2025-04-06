@@ -3,7 +3,8 @@ namespace PocCQRS.Infrastructure.Settings;
 public interface IAppSettings
 {
     RabbitMQ RabbitMQSettings { get; }
-    MySqlDB DatabaseSettings { get; }
-    Reddis CacheSettings { get; }
+    MySqlDB DatabaseSettings { get; } 
+    MongoDB MongoSettings { get; }
+    Redis CacheSettings { get; }
     Task ReloadAsync();
 }
