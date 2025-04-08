@@ -1,4 +1,4 @@
-namespace PocCQRS.Infrastructure.Persistence;
+namespace PocCQRS.Infrastructure.Persistence.NoSql.Client;
 
 // OrderSystem.Infrastructure/Persistence/MongoDbConfig.cs
 using MongoDB.Driver;

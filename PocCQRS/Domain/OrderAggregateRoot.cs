@@ -3,13 +3,13 @@ using PocCQRS.Domain.Events;
 
 namespace PocCQRS.Domain;
 
-public class OrderAggregate : AggregateRoot
+public class OrderAggregate : AggregateRoot<OrderSnapshot>
 {
-    public OrderState State { get; private set; }
-    
+    public override OrderSnapshot Snapshot { get; set; }
+
     public OrderAggregate()
     {
-        State = new OrderState();
+        Snapshot = new OrderSnapshot();
         foreach (var evt in DomainEvents)
         {
             Apply(evt);
@@ -19,9 +19,9 @@ public class OrderAggregate : AggregateRoot
 
     public async Task<bool> CreateOrderAsync(Guid orderId, OrderCreatedEvent @event)
     {
-        Id = orderId;
+        AggregateId = orderId;
         try
-        {
+        {            
             Apply(@event);
             AddDomainEvent(@event);
         
@@ -30,20 +30,19 @@ public class OrderAggregate : AggregateRoot
         catch (Exception e)
         {
             //_logger.LogError("Event state failed - {EventType}", typeof(@event).Name);
-            return  await  Task.FromResult(false);
+            return await Task.FromResult(false);
         }
     }
 
-    // public void AddItem(Guid orderId, Guid productId, string productName, decimal price, int quantity)
-    // {
-    //     var @event = new OrderItemAddedEvent(orderId, productId, productName, price, quantity);
-    //     Apply(@event);
-    //     AddDomainEvent(@event);
-    // }
+    public void AddItem(OrderAddedItemEvent @event)
+    {
+        Apply(@event);
+        AddDomainEvent(@event);
+    }
     //
     // public void CompleteOrder(Guid orderId)
     // {
-    //     if (State.IsCompleted)
+    //     if (Snapshot.IsCompleted)
     //         throw new InvalidOperationException("Order is already completed");
     //
     //     var @event = new OrderCompletedEvent(orderId);
@@ -53,24 +52,22 @@ public class OrderAggregate : AggregateRoot
 
     public sealed override void Apply(IDomainEvent @event)
     {
-        When((dynamic)@event);
+        //When((dynamic)@event);
+        var evt = (dynamic)@event;
+
+        Snapshot.Apply(evt);
         Version++;
     }
 
     private void When(OrderCreatedEvent @event)
     {
-        State.OrderId = @event.OrderId;
-        State.OrderItemStates = @event.OrderItems.Select(oi => new OrderState.OrderItemState(oi.ProductId, oi.UnitPrice, oi.Quantity)).ToList();
-        State.Quantity = @event.OrderItems.Sum(p => p.Quantity);
-        State.Amount = @event.OrderItems.Sum(p => p.UnitPrice);
-        State.Status = "Created";
+
     }
 
     // private void When(OrderItemAddedEvent @event)
     // {
-    //     State.Items.Add(new OrderItems
+    //     Snapshot.Items.Add(new OrderItems
     //     {
-    //         ProductId = @event.ProductId,
     //         ProductId = @event.ProductId,
     //         Price = @event.Price,
     //         Quantity = @event.Quantity
@@ -79,8 +76,8 @@ public class OrderAggregate : AggregateRoot
     //
     // private void When(OrderCompletedEvent @event)
     // {
-    //     State.Status = "Completed";
-    //     State.IsCompleted = true;
-    //     State.CompletionDate = DateTime.UtcNow;
+    //     Snapshot.Status = "Completed";
+    //     Snapshot.IsCompleted = true;
+    //     Snapshot.CompletionDate = DateTime.UtcNow;
     // }
 }

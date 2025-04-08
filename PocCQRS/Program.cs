@@ -1,21 +1,17 @@
-using Dapper;
 using MassTransit;
-using PocCQRS.EntryPoint.Consumer;
-using PocCQRS.EntryPoint.EndPoints;
-using MediatR;
-using Microsoft.Extensions.Options;
-using PocCQRS.Domain.Services;
-using PocCQRS.Infrastructure.Persistence;
-using PocCQRS.Infrastructure.Persistence.Repository;
-using PocCQRS.Infrastructure.Settings;
 using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using PocCQRS.Domain.Services;
+using PocCQRS.EntryPoint.EndPoints;
 using PocCQRS.Infrastructure.Messaging;
+using PocCQRS.Infrastructure.Persistence.Cache;
+using PocCQRS.Infrastructure.Persistence.NoSql;
+using PocCQRS.Infrastructure.Persistence.Sql;
+using PocCQRS.Infrastructure.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Configurações
 builder.Services.Configure<PocCQRS.Infrastructure.Settings.RabbitMQ>(builder.Configuration.GetSection(PocCQRS.Infrastructure.Settings.RabbitMQ.SectionName));
@@ -27,26 +23,27 @@ builder.Services.AddSingleton<IAppSettings, AppSettings>();
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-//databases
-builder.Services.AddPersistence();
-
 var serviceProvider = builder.Services.BuildServiceProvider();
-builder.Services.AddMongoPersistence(serviceProvider.GetRequiredService<IAppSettings>());
 
+// Databases
+// Sql (MySql - Transaction database)
+builder.Services.AddSqlPersistence();
 
-// Register infrastructure services
-builder.Services.AddScoped<IEventStore, MongoEventStore>();
-builder.Services.AddScoped<IEventStoreRepository, EventStoreRepository>();
+// NoSql (MongoDb - EventStore - Event Sourcing)
+builder.Services.AddNoSqlPersistence(serviceProvider.GetRequiredService<IAppSettings>());
+
+// Cache (Redis - EventState - Snapshot)
+builder.Services.AddCachePersistence(builder.Configuration);
 
 // MassTransit Configuration
 builder.Services.AddMassTransitBus(serviceProvider.GetRequiredService<IAppSettings>());
 
-builder.Services.AddSingleton<IPublisherFactory>(provider => 
+builder.Services.AddSingleton<IPublisherFactory>(provider =>
 {
     var logger = provider.GetRequiredService<ILogger<PublisherFactory>>();
     var appSettings = provider.GetRequiredService<IAppSettings>();
     var bus = provider.GetRequiredService<IBus>(); // Changed from IPublishEndpoint to IBus
-    
+
     try
     {
         return new PublisherFactory(logger, appSettings, bus);
@@ -60,8 +57,8 @@ builder.Services.AddSingleton<IPublisherFactory>(provider =>
 
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-// Opcional: Configuração global para evitar problemas com DateTime
-BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
+// Configuração global para evitar problemas com DateTime
+BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc, BsonType.String));
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -83,7 +80,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c => 
+    app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PocCQRS API V1");
         c.RoutePrefix = "swagger";
@@ -98,6 +95,3 @@ app.MapSettingsEndpoints();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 await app.RunAsync();
-
-
-

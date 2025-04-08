@@ -3,9 +3,9 @@ using MediatR;
 using PocCQRS.Application.Commands;
 using PocCQRS.Domain;
 using PocCQRS.Domain.Events;
-using PocCQRS.Domain.Services;
 using PocCQRS.Infrastructure.Messaging;
-using PocCQRS.Infrastructure.Persistence.Repository;
+using PocCQRS.Infrastructure.Persistence.Cache.Interfaces;
+using PocCQRS.Infrastructure.Persistence.NoSql.Interfaces;
 
 namespace PocCQRS.Application.CommandHandlers;
 
@@ -14,14 +14,17 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
     //private readonly IOrderService _orderService;
     private readonly Publisher<OrderCreatedEvent> _publisher;
     private readonly IEventStoreRepository _eventStoreRepository;
+    private readonly ICacheClient _cacheClient;
 
     public CreateOrderCommandHandler(
        // IOrderService orderService,
        IPublisherFactory publisherFactory,
-        IEventStoreRepository eventStoreRepository)
+       IEventStoreRepository eventStoreRepository,
+       ICacheClient cacheClient)
     {
         _publisher = publisherFactory.CreatePublisher<OrderCreatedEvent>();
         _eventStoreRepository = eventStoreRepository;
+        _cacheClient = cacheClient;
     }
 
     public async Task<Guid> Handle(CreateOrderCommand command, CancellationToken cancellationToken)
@@ -37,8 +40,20 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
 
         if (!isCreated) 
             return Guid.Empty;
+
+        // TODO: Considerar a forte dependencia aos 4 metodos abaixo.
+        //       Em caso um deles falhar, mesmo apos a resiliencia, deve-se dar rollback nos processos anteriores.
         
-        await _eventStoreRepository.SaveAsync(orderAggregate);
+        // Mongo EventStore
+        await _eventStoreRepository.SaveEventAsync(orderAggregate);
+
+        // Mongo Snapshot
+        await _eventStoreRepository.SaveSnapshotAsync<OrderAggregate, OrderSnapshot>(orderAggregate);
+
+        // Redis
+        await _cacheClient.SetAsync(orderAggregate.AggregateId.ToString("D"), orderAggregate);
+
+        // Rabbit
         await _publisher.PublishAsync(@event);
         
         return @event.OrderId;

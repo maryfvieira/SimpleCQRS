@@ -1,6 +1,7 @@
 namespace PocCQRS.Domain.Events;
 
 public interface IDomainEvent{
-    public Guid EventId { get; set; }
-    public DateTime OcurredIn { get; set; }
+    string EventStatus { get; }
+    Guid EventId { get; set; }
+    DateTime OcurredIn { get; set; }
 }

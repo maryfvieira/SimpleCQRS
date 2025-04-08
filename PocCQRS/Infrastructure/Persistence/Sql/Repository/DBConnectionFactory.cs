@@ -1,7 +1,8 @@
 using System.Data;
 using MySql.Data.MySqlClient;
+using PocCQRS.Infrastructure.Persistence.Sql.Interfaces;
 
-namespace PocCQRS.Infrastructure.Persistence.Repository;
+namespace PocCQRS.Infrastructure.Persistence.Sql.Repository;
 
 public class DbConnectionFactory : IDbConnectionFactory
 {

@@ -1,6 +1,6 @@
 using PocCQRS.Application.Queries;
 
-namespace PocCQRS.Infrastructure.Persistence.Repository;
+namespace PocCQRS.Infrastructure.Persistence.Sql.Interfaces;
 
 public interface IOrderRepository
 {

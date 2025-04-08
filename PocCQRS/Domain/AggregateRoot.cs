@@ -2,17 +2,25 @@ using PocCQRS.Domain.Events;
 
 namespace PocCQRS.Domain;
 
-public abstract class AggregateRoot
+public abstract class AggregateRoot<TAggregateSnapshot>
 {
-    public Guid Id { get; protected set; }
-    public int Version { get; protected set; } = -1;
+    public Guid AggregateId { get; set; }
+    public int Version { get; set; } = -1;
+
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
 
-    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public List<IDomainEvent> DomainEvents => _domainEvents;
+
+    public Guid LastEventId { get; set; }
+
+    public abstract TAggregateSnapshot Snapshot { get; set; }
+    public DateTime CreateAt { get; set; }
+    public DateTime LastUpdateAt { get; set; }
 
     public void AddDomainEvent(IDomainEvent @event)
     {
         _domainEvents.Add(@event);
+        LastEventId = @event.EventId;
     }
 
     public void ClearDomainEvents()

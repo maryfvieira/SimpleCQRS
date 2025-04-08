@@ -2,7 +2,7 @@ using MassTransit;
 using PocCQRS.Application.Commands;
 using PocCQRS.Domain.Events;
 using PocCQRS.Infrastructure.Messaging;
-using PocCQRS.Infrastructure.Persistence.Repository;
+using PocCQRS.Infrastructure.Persistence.Sql.Interfaces;
 
 namespace PocCQRS.Domain.Services;
 
