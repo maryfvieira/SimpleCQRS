@@ -30,7 +30,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
     public async Task<Guid> Handle(CreateOrderCommand command, CancellationToken cancellationToken)
     {
         // Persiste no MySQL via Dapper
-        //var orderId = await _orderService.CreateOrderAsync(commad);
+        //var orderId = await _orderService.CreateAsync(commad);
         var orderId = Guid.NewGuid();
         var orderItemsEvent = command.OrderItems.Select(oi => new OrderItemEvent(oi.ProductId, oi.UnitPrice, oi.Quantity));
         var @event = new OrderCreatedEvent(orderId, orderItemsEvent);

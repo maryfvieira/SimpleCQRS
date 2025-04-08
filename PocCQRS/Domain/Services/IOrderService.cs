@@ -1,9 +1,9 @@
-using PocCQRS.Application.Commands;
+using PocCQRS.Domain.Models;
 
 namespace PocCQRS.Domain.Services;
 
 public interface IOrderService
 {
-    Task<Guid> CreateOrderAsync(CreateOrderCommand command);
+    Task<Guid> CreateOrderAsync(OrderDto orderDto);
     Task<IResult> GetOrderAsync(Guid id);
 }

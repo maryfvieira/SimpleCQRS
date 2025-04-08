@@ -1,28 +1,27 @@
-using MassTransit;
-using PocCQRS.Application.Commands;
-using PocCQRS.Domain.Events;
-using PocCQRS.Infrastructure.Messaging;
+using PocCQRS.Domain.Entities;
+using PocCQRS.Domain.Models;
 using PocCQRS.Infrastructure.Persistence.Sql.Interfaces;
 
 namespace PocCQRS.Domain.Services;
 
-public class OrderService: IOrderService
+public class OrderService : IOrderService
 {
     private readonly IOrderRepository _repository;
-    private readonly Publisher<OrderCreatedEvent> _publisher;
 
-    public OrderService(IOrderRepository repository, IPublisherFactory publisherFactory)
+    public OrderService(IOrderRepository repository)
     {
         _repository = repository;
-        _publisher = publisherFactory.CreatePublisher<OrderCreatedEvent>();
     }
 
-    public async Task<Guid> CreateOrderAsync(CreateOrderCommand command)
+    public async Task<Guid> CreateOrderAsync(OrderDto orderDto)
     {
-        //var orderId = await _repository.CreateOrderAsync(command.ProductId, command.Quantity, command.Amount);
-        //await _publisher.PublishAsync(new OrderCreatedEvent(orderId, command.ProductId, command.Quantity, command.Amount, DateTime.UtcNow));
-        //return orderId;
-        return await Task.FromResult(Guid.Empty);
+        //TODO: usar autoMapper
+        var orderItems = orderDto.OrderItems.Select(oi => new OrderItem(oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice));
+        var order = new Order(orderDto.Id, orderDto.Quantity, orderDto.Amount, orderItems, orderDto.Status, orderDto.CreatedOn);
+
+        var orderId = await _repository.CreateAsync(order);
+
+        return await Task.FromResult(orderId);
     }
 
     public async Task<IResult> GetOrderAsync(Guid id)

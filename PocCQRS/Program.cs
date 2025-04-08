@@ -3,7 +3,10 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using PocCQRS.Application.EventHandlers;
+using PocCQRS.Domain.Events;
 using PocCQRS.Domain.Services;
+using PocCQRS.EntryPoint.Consumer;
 using PocCQRS.EntryPoint.EndPoints;
 using PocCQRS.Infrastructure.Messaging;
 using PocCQRS.Infrastructure.Persistence.Cache;
@@ -37,6 +40,14 @@ builder.Services.AddCachePersistence(builder.Configuration);
 
 // MassTransit Configuration
 builder.Services.AddMassTransitBus(serviceProvider.GetRequiredService<IAppSettings>());
+
+
+// Registrando todos os handlers
+builder.Services.AddScoped<IEventHandler<OrderCreatedEvent>, OrderCreatedEventHandler>();
+builder.Services.AddScoped<IEventHandler<OrderAddedItemEvent>, OrderAddedItemEventHandler>();
+
+// Registrando o consumer genérico
+builder.Services.AddScoped(typeof(IConsumer<>), typeof(EventConsumer<>));
 
 builder.Services.AddSingleton<IPublisherFactory>(provider =>
 {
