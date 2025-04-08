@@ -36,7 +36,8 @@ public class EventConsumer<T> : IConsumer<T> where T : class, IDomainEvent
     private AsyncPolicy CreateResiliencePolicy()
     {
         var retryPolicy = Policy
-            .Handle<Exception>()
+            .Handle<RabbitMqConnectionException>()
+            .Or<SocketException>()
             .WaitAndRetryAsync(
                 _queueConfig.RetryCount,
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(_queueConfig.RetryInterval, retryAttempt)),
@@ -46,7 +47,8 @@ public class EventConsumer<T> : IConsumer<T> where T : class, IDomainEvent
                 });
 
         var fallbackPolicy = Policy
-               .Handle<Exception>()
+            .Handle<RabbitMqConnectionException>()
+            .Or<SocketException>()
                .FallbackAsync(
                    fallbackAction: async (context, cancellationToken) =>
                    {
@@ -79,20 +81,12 @@ public class EventConsumer<T> : IConsumer<T> where T : class, IDomainEvent
     {
         var policyContext = new Context { ["message"] = context.Message };
 
-        try
-        {
             await _resiliencePolicy.ExecuteAsync(async _ =>
             {
                 _logger.LogInformation("Consuming event: {EventType}", typeof(T).Name);
                 await _handler.HandleAsync(context.Message);
             }, policyContext);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao processar evento {EventType}. Enviando para DLQ após falhas.", typeof(T).Name);
-            throw; // relança para que MassTransit trate como falha
-
-        }
+        
     }
 
     private async Task SendToDlqAsync(T message)
