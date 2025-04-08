@@ -2,4 +2,5 @@ using MediatR;
 
 namespace PocCQRS.Application.Commands;
 
-public record CreateOrderCommand(string ProductName, int Quantity, double Amount) : IRequest<Guid>;
+public record OrderItemCommand(int ProductId, int Quantity, double UnitPrice);
+public record CreateOrderCommand(IList<OrderItemCommand> OrderItems) : IRequest<Guid>;

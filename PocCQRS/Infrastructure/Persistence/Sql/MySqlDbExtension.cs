@@ -1,15 +1,16 @@
 using Dapper;
-using PocCQRS.Infrastructure.Persistence.Repository;
+using PocCQRS.Infrastructure.Persistence.Sql.Interfaces;
+using PocCQRS.Infrastructure.Persistence.Sql.Repository;
 using PocCQRS.Infrastructure.Settings;
 
-namespace PocCQRS.Infrastructure.Persistence;
+namespace PocCQRS.Infrastructure.Persistence.Sql;
 
-public static class DbExtension
+public static class MySqlDbExtension
 {
 
-    public static IServiceCollection AddPersistence(this IServiceCollection services)
+    public static IServiceCollection AddSqlPersistence(this IServiceCollection services)
     {
-        services.AddSingleton<IDbConnectionFactory>(provider => 
+        services.AddSingleton<IDbConnectionFactory>(provider =>
         new DbConnectionFactory(provider.GetRequiredService<IAppSettings>().DatabaseSettings.ConnectionString));
         services.AddScoped<IOrderRepository, OrderRepository>();
         return services;
@@ -24,8 +25,8 @@ public static class DbExtension
             var connection = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>().CreateConnection();
             await connection.ExecuteAsync(@"
                 CREATE TABLE IF NOT EXISTS Orders (
-                    Id CHAR(36) PRIMARY KEY,
-                    ProductName VARCHAR(100) NOT NULL,
+                    AggregateId CHAR(36) PRIMARY KEY,
+                    ProductId VARCHAR(100) NOT NULL,
                     Quantity INT NOT NULL,
                     CreatedAt DATETIME NOT NULL
                 )");
