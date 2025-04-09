@@ -48,6 +48,7 @@ builder.Services.AddScoped<IEventHandler<OrderAddedItemEvent>, OrderAddedItemEve
 
 // Registrando o consumer genérico
 builder.Services.AddScoped(typeof(IConsumer<>), typeof(EventConsumer<>));
+builder.Services.AddScoped(typeof(IConsumer<>), typeof(DeadLetterEventConsumer<>));
 
 builder.Services.AddSingleton<IPublisherFactory>(provider =>
 {

@@ -1,4 +1,3 @@
-using Dapper;
 using PocCQRS.Infrastructure.Persistence.NoSql.Client;
 using PocCQRS.Infrastructure.Persistence.NoSql.Interfaces;
 using PocCQRS.Infrastructure.Persistence.NoSql.Repository;

@@ -1,6 +1,10 @@
 using MassTransit;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using PocCQRS.Domain.Events;
 using PocCQRS.EntryPoint.Consumer;
 using PocCQRS.Infrastructure.Settings;
+using RabbitMQ.Client;
 using static PocCQRS.Infrastructure.Settings.RabbitMQ;
 
 namespace PocCQRS.Infrastructure.Messaging;
@@ -15,9 +19,13 @@ public static class MassTransitBusConfigurator
         {
             foreach (var queue in config.Queues)
             {
-                Type consumerType = GetConsumerTypeByQueueName(queue.Value.Name);
+                Type consumerType = GetEventConsumerBy(queue.Value.Name);
 
                 registrationConfigurator.AddConsumer(consumerType);
+
+                Type dlqConsumerType = GetDlqEventConsumerBy(queue.Value.Name);
+
+                registrationConfigurator.AddConsumer(dlqConsumerType);
             }
 
             registrationConfigurator.UsingRabbitMq((context, cfg) =>
@@ -30,12 +38,31 @@ public static class MassTransitBusConfigurator
 
                 foreach (var queue in config.Queues)
                 {
-                    Type consumerType = GetConsumerTypeByQueueName(queue.Value.Name);
+                    Type consumerType = GetEventConsumerBy(queue.Value.Name);
 
                     cfg.ReceiveEndpoint(queue.Value.Name, e =>
                     {
+                        // Desabilita a criação da fila de erro padrão
+                        e.DiscardFaultedMessages();
+
                         e.SetQueueArgument("x-dead-letter-exchange", queue.Value.DLQ.Exchange);
                         e.SetQueueArgument("x-dead-letter-routing-key", queue.Value.DLQ.Queue);
+
+                        e.ConfigureConsumer(context, consumerType);
+                    });
+
+                    cfg.ReceiveEndpoint(queue.Value.DLQ.Queue, e =>
+                    {
+                        
+                        e.Bind(queue.Value.DLQ.Exchange, x =>
+                        {                            
+                            x.RoutingKey = queue.Value.DLQ.Queue;
+                            x.ExchangeType = ExchangeType.Direct;
+                        });
+
+                        // Tratar mensagens na DLQ aqui
+                        // Define o consumidor para a DLQ
+                        var consumerType = GetDlqEventConsumerBy(queue.Value.Name);
                         e.ConfigureConsumer(context, consumerType);
                     });
                 }
@@ -44,6 +71,20 @@ public static class MassTransitBusConfigurator
 
         services.AddMassTransitHostedService();
         return services;
+    }
+
+    private static Type GetEventConsumerBy(string queueName)
+    {
+        var eventType = GetConsumerTypeByQueueName(queueName);
+
+        return typeof(EventConsumer<>).MakeGenericType(eventType);
+    }
+
+    private static Type GetDlqEventConsumerBy(string queueName)
+    {
+        var eventType = GetConsumerTypeByQueueName(queueName);
+
+        return typeof(DeadLetterEventConsumer<>).MakeGenericType(eventType);
     }
 
     private static Type GetConsumerTypeByQueueName(string queueName)
@@ -58,6 +99,6 @@ public static class MassTransitBusConfigurator
             throw new InvalidOperationException($"Tipo de evento '{queueName}' não encontrado.");
         }
 
-        return typeof(EventConsumer<>).MakeGenericType(eventType);
+        return eventType;
     }
 }
